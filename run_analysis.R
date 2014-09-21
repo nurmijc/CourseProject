@@ -1,6 +1,10 @@
+#If not already downloaded, download UCI dataset
 #download.file("https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip",destfile = "data/gettingdataproj1.zip", method = "curl")
 
-#load library plyr to use join() function later
+#Set UCI dataset as working directory
+
+#load library plyr and library data.table
+library(data.table)
 library(plyr)
 
 ####Create column names
@@ -32,8 +36,6 @@ activity <- yTestMerge[,2]
 subjectTest <- read.table("UCI HAR Dataset/test/subject_test.txt")
 names(subjectTest) <- subjectColumnName
 testSet <- cbind(activity,subjectTest,xTestMeanStd)
-#label as from training set
-testSet$set <- "test set"
 
 #read and label training set
 xTrain <- read.table("UCI HAR Dataset/train/X_train.txt")
@@ -47,8 +49,6 @@ activity <- yTrainMerge[,2]
 subjectTrain <- read.table("UCI HAR Dataset/train/subject_train.txt")
 names(subjectTrain) <- subjectColumnName
 trainSet <- cbind(activity,subjectTrain,xTrainMeanStd)
-#label as from training set
-trainSet$set <- "training set"
 
 #Combine datasets
 superSet <- rbind(testSet,trainSet)
@@ -78,4 +78,11 @@ names(superSet) <- sub("-x","X-Axis",names(superSet),)
 names(superSet) <- sub("-y","Y-Axis",names(superSet),)
 names(superSet) <- sub("-z","Z-Axis",names(superSet),)
 
-tidySetSplit <- split(superSet, c(superSet$activity,superSet$subject))
+#Summarize tidy data
+superSet.dt <- data.table(superSet)
+keycols <- c("activity","subject")
+setkeyv(superSet.dt, keycols)
+superSet.dt.mean<-superSet.dt[,lapply(.SD,mean), by="subject"]
+
+#Write tidy file to working directory
+write.table(superSet.dt.mean, file = "tidySet.txt",row.name=FALSE)
